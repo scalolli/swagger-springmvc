@@ -1,5 +1,6 @@
 package com.mangofactory.swagger.springmvc;
 
+import java.beans.PropertyDescriptor;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
@@ -103,7 +104,11 @@ public class MvcModelResource {
     private ModelProperty getModelProperty(Field field, String alternateTypeName) {
         ModelProperty modelProperty = new ModelProperty(field.getName(),
                 alternateTypeName == null ? field.getType().getSimpleName().toLowerCase() : alternateTypeName);
+        PropertyDescriptor descriptor = BeanUtils.getPropertyDescriptor(modelClass, field.getName());
         ApiProperty apiProperty = AnnotationUtils.findAnnotation(field.getType().getClass(), ApiProperty.class);
+        if(apiProperty == null) {
+            apiProperty = AnnotationUtils.findAnnotation(descriptor.getReadMethod(), ApiProperty.class);
+        }
         if(apiProperty != null) {
             //todo: there are other properties for this annotation how do we handle them?
             if(apiProperty.allowableValues() != null) {
