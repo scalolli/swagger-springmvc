@@ -10,13 +10,13 @@ import org.junit.Test;
 
 import com.mangofactory.swagger.springmvc.test.Pet;
 
-public class MvcModelResourceTest {
+public class MvcModelReaderTest {
 
-	private MvcModelResource model;
+	private MvcModelReader model;
 	@Before
 	public void setup()
 	{
-		model = new MvcModelResource(Pet.class);
+		model = new MvcModelReader(Pet.class);
 	}
 	@Test
 	public void describesStringPropertyCorrectly()

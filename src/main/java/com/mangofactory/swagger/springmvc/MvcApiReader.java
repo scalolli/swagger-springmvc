@@ -1,11 +1,13 @@
 package com.mangofactory.swagger.springmvc;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.BeanFactoryUtils;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.context.WebApplicationContext;
@@ -20,6 +22,7 @@ import com.mangofactory.swagger.SwaggerConfiguration;
 import com.wordnik.swagger.core.Documentation;
 import com.wordnik.swagger.core.DocumentationEndPoint;
 import com.wordnik.swagger.core.DocumentationOperation;
+import com.wordnik.swagger.core.DocumentationSchema;
 
 @Slf4j
 /**
@@ -43,6 +46,7 @@ public class MvcApiReader {
 	
 	private final Map<Class<?>,DocumentationEndPoint> resourceListCache = Maps.newHashMap();
 	private final Map<Class<?>,ControllerDocumentation> apiCache = Maps.newHashMap();
+    private final HashMap<String, DocumentationSchema> propertyNameVsDocumentation = new HashMap<>();
 	
 	public MvcApiReader(WebApplicationContext context, SwaggerConfiguration swaggerConfiguration)
 	{
@@ -54,6 +58,7 @@ public class MvcApiReader {
 	
 	private void buildMappingDocuments() {
 		resourceListing = config.newDocumentation();
+        resourceListing.setModels(propertyNameVsDocumentation);
 		
 		log.debug("Discovered {} candidates for documentation",handlerMappingBeans.size());
 		for (HandlerMapping handlerMapping : handlerMappingBeans.values())
@@ -95,8 +100,9 @@ public class MvcApiReader {
 			addApiListingIfMissing(resource);
 			
 			ControllerDocumentation apiDocumentation = getApiDocumentation(resource);
+            addModels(handlerMethod, apiDocumentation);
 
-			for (String requestUri : mappingInfo.getPatternsCondition().getPatterns())
+            for (String requestUri : mappingInfo.getPatternsCondition().getPatterns())
 			{
 				DocumentationEndPoint endPoint = apiDocumentation.getEndPoint(requestUri);
 				appendOperationsToEndpoint(mappingInfo,handlerMethod,endPoint);
@@ -125,9 +131,21 @@ public class MvcApiReader {
 		}
 	}
 
+	private void addModels(HandlerMethod handlerMethod, ControllerDocumentation apiDocumentation) {
+		MvcModelResource resource = new MvcModelResource(handlerMethod);
+        HashMap<String, DocumentationSchema> nameVsDocumentation = resource.getPropertyNameVsDocumentation();
+        //set the models for this method directly on the api documentation.
+        if (apiDocumentation.getModels() == null) {
+            apiDocumentation.setModels(nameVsDocumentation);
+        } else {
+            apiDocumentation.getModels().putAll(nameVsDocumentation);
+        }
+        propertyNameVsDocumentation.putAll(nameVsDocumentation);
+	}
+
 	public ControllerDocumentation getDocumentation(
 			String apiName) {
-		
+
 		for (ControllerDocumentation documentation : apiCache.values())
 		{
 			if (documentation.matchesName(apiName))

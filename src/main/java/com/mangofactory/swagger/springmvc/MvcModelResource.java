@@ -4,17 +4,19 @@ import java.beans.PropertyDescriptor;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.wordnik.swagger.core.ApiProperty;
+import com.wordnik.swagger.core.DocumentationSchema;
+import lombok.Getter;
 import org.springframework.beans.BeanUtils;
+import org.springframework.core.MethodParameter;
 import org.springframework.core.annotation.AnnotationUtils;
+import org.springframework.web.method.HandlerMethod;
 
 import javax.annotation.Nullable;
 
@@ -31,101 +33,56 @@ public class MvcModelResource {
     // NOTE : Currently, this class handles the parsing, as well as the POJO aspects.
 	// should probably split this out later.
 
-	private final Class<?> modelClass;
-	private Map<String, ModelProperty> nameVsProperty = Maps.newHashMap();
-    public static final String ARRAY = "array";
+    @Getter
+    private HashMap<String, DocumentationSchema> propertyNameVsDocumentation = new HashMap<>();
 
-    public MvcModelResource(Class<?> modelClass)
-	{
-		this.modelClass = modelClass;
-		populateModelProperties();
-	}
-
-	private void populateModelProperties() {
-        populateProperties(modelClass);
+    public MvcModelResource(HandlerMethod handlerMethod) {
+        List<Class> types = new ArrayList<>(); Collections.addAll(types, handlerMethod.getMethod().getParameterTypes());
+        Collections.addAll(types, handlerMethod.getMethod().getReturnType());
+        populateModels(types);
     }
 
-    private void populateProperties(Class classToExtractPropertiesFrom) {
-        Field[] fields = classToExtractPropertiesFrom.getDeclaredFields();
-        List<Field> fieldList = Arrays.asList(fields);
-        List<Field> simpleFields = newArrayList(filter(fieldList, new Predicate<Field>() {
-            @Override
-            public boolean apply(Field field) {
-                return BeanUtils.isSimpleProperty(field.getType());
-            }
-        }));
-        List<Field> complexFields = newArrayList(filter(fieldList, new Predicate<Field>() {
-            @Override
-            public boolean apply(Field field) {
-                return !BeanUtils.isSimpleProperty(field.getType()) && !isListOfValues(field);
-            }
-        }));
-        List<Field> listFields = newArrayList(filter(fieldList, new Predicate<Field>() {
-            @Override
-            public boolean apply(Field field) {
-                return isListOfValues(field);
-            }
-        }));
-
-        for(Field field : simpleFields) {
-            nameVsProperty.put(field.getName(), getModelProperty(field, null));
-        }
-
-        for(Field field : complexFields) {
-            nameVsProperty.put(field.getName(), getModelProperty(field, null));
-            // todo: Not sure if I need to populate the sub type's properties here itself
-//            populateProperties(field.getType());
-        }
-
-        for(Field listField : listFields) {
-            populatePropertiesForList(listField);
-        }
+    private void populateModels(List<Class> typesToProcess) {
+       for(Class parameter : typesToProcess) {
+           if (!BeanUtils.isSimpleProperty(parameter)) {
+               MvcModelReader modelReader = new MvcModelReader(parameter);
+               DocumentationSchema schema = new DocumentationSchema();
+               Map<String, DocumentationSchema> subProperties = new HashMap<>();
+               DocumentationSchema propertySchema = null;
+               //todo: refactor this code and also handle the condition when return type is a list
+               for(Map.Entry<String, ModelProperty> property : modelReader.getNameVsProperty().entrySet()) {
+                   if (!BeanUtils.isSimpleProperty(property.getValue().getClassType())) {
+                       if (property.getValue().getClassType() == List.class) {
+                           populateModels(Arrays.asList((Class) property.getValue().getMemberDescription().getReferencedClassType()));
+                           propertySchema = createDocumentationSchemaForList(property);
+                       } else {
+                           populateModels(Arrays.asList((Class) property.getValue().getClassType()));
+                           propertySchema = createDocumentationSchema(property);
+                       }
+                   } else {
+                      propertySchema = createDocumentationSchema(property);
+                   }
+                   subProperties.put(property.getKey(), propertySchema);
+               }
+               schema.setProperties(subProperties);
+               this.propertyNameVsDocumentation.put(parameter.getSimpleName(), schema);
+           }
+       }
     }
 
-    private boolean isListOfValues(Field field) {
-        return (field.getType() == List.class || field.getType() == Array.class) && field.getGenericType() instanceof ParameterizedType;
+    private DocumentationSchema createDocumentationSchemaForList(Map.Entry<String, ModelProperty> property) {
+        DocumentationSchema schema = new DocumentationSchema();
+        schema.setType("Array");
+        DocumentationSchema tagSchema = new DocumentationSchema();
+        tagSchema.setType(property.getValue().getMemberDescription().getReferencedClassType().getSimpleName());
+        schema.setItems(tagSchema);
+        return schema;
     }
 
-    private void populatePropertiesForList(Field field) {
-        Class actualTypeParameter = ((Class)((ParameterizedType) field.getGenericType()).getActualTypeArguments()[0]);
-        ModelProperty modelProperty = getModelProperty(field, ARRAY);
-        CollectionMemberDescription collectionMemberDescription = new CollectionMemberDescription();
-        if(BeanUtils.isSimpleProperty(actualTypeParameter)) {
-            collectionMemberDescription.setType(actualTypeParameter.getSimpleName().toLowerCase());
-        } else {
-            //todo: since it is a complex type we need to populate properties for its fields as well?
-//            populateProperties(actualTypeParameter);
-            collectionMemberDescription.setReferenceType(actualTypeParameter.getSimpleName().toLowerCase());
-        }
-        modelProperty.setMemberDescription(collectionMemberDescription);
-        nameVsProperty.put(field.getName(), modelProperty);
+    private DocumentationSchema createDocumentationSchema(Map.Entry<String, ModelProperty> value) {
+        DocumentationSchema schema = new DocumentationSchema();
+        schema.setType(value.getValue().getType());
+        schema.setDescription(value.getValue().getDescription());
+        return schema;
     }
-
-    private ModelProperty getModelProperty(Field field, String alternateTypeName) {
-        ModelProperty modelProperty = new ModelProperty(field.getName(),
-                alternateTypeName == null ? field.getType().getSimpleName().toLowerCase() : alternateTypeName);
-        PropertyDescriptor descriptor = BeanUtils.getPropertyDescriptor(modelClass, field.getName());
-        ApiProperty apiProperty = AnnotationUtils.findAnnotation(field.getType().getClass(), ApiProperty.class);
-        if(apiProperty == null) {
-            apiProperty = AnnotationUtils.findAnnotation(descriptor.getReadMethod(), ApiProperty.class);
-        }
-        if(apiProperty != null) {
-            //todo: there are other properties for this annotation how do we handle them?
-            if(apiProperty.allowableValues() != null) {
-                AllowableValues values = new AllowableValues();
-                values.setValues(Arrays.asList(apiProperty.allowableValues().split(",")));
-                values.setValueType(AllowableValueType.LIST);
-                modelProperty.setAllowableValues(values);
-            }
-            if(apiProperty.value() != null) {
-                modelProperty.setDescription(apiProperty.value());
-            }
-        }
-        return modelProperty;
-    }
-
-    public ModelProperty getProperty(String propertyName) {
-		return nameVsProperty.get(propertyName);
-	}
-
 }

@@ -7,4 +7,5 @@ public class CollectionMemberDescription {
 
 	private String type;
 	private String referenceType;
+    private Class referencedClassType;
 }

@@ -1,5 +1,6 @@
 package com.mangofactory.swagger.springmvc.controller;
 
+import com.wordnik.swagger.core.DocumentationSchema;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -16,6 +17,9 @@ import com.mangofactory.swagger.ControllerDocumentation;
 import com.mangofactory.swagger.SwaggerConfiguration;
 import com.mangofactory.swagger.springmvc.MvcApiReader;
 import com.wordnik.swagger.core.Documentation;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @Controller
 @RequestMapping("/apidoc")

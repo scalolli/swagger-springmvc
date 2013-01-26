@@ -60,6 +60,7 @@ public class ApiMethodReader {
 			tags = apiOperation.tags();
 		}
 		nickname = handlerMethod.getMethod().getName();
+        responseClass = handlerMethod.getMethod().getReturnType();
 		deprecated = handlerMethod.getMethodAnnotation(Deprecated.class) != null;
 	}
 
@@ -67,6 +68,7 @@ public class ApiMethodReader {
 		DocumentationOperation operation = new DocumentationOperation(requestMethod.name(),summary,notes);
 		operation.setDeprecated(deprecated);
 		operation.setNickname(nickname);
+        operation.setResponseClass(responseClass.getSimpleName());
 		for (DocumentationParameter parameter : parameters)
 			operation.addParameter(parameter);
 		setTags(operation);
