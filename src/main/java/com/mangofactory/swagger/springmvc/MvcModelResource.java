@@ -34,10 +34,11 @@ public class MvcModelResource {
 	// should probably split this out later.
 
     @Getter
-    private HashMap<String, DocumentationSchema> propertyNameVsDocumentation = new HashMap<>();
+    private HashMap<String, DocumentationSchema> propertyNameVsDocumentation = Maps.newHashMap();
 
     public MvcModelResource(HandlerMethod handlerMethod) {
-        List<Class> types = new ArrayList<>(); Collections.addAll(types, handlerMethod.getMethod().getParameterTypes());
+        List<Class> types = Lists.newArrayList();
+        Collections.addAll(types, handlerMethod.getMethod().getParameterTypes());
         Collections.addAll(types, handlerMethod.getMethod().getReturnType());
         populateModels(types);
     }
@@ -47,7 +48,7 @@ public class MvcModelResource {
            if (!BeanUtils.isSimpleProperty(parameter)) {
                MvcModelReader modelReader = new MvcModelReader(parameter);
                DocumentationSchema schema = new DocumentationSchema();
-               Map<String, DocumentationSchema> subProperties = new HashMap<>();
+               Map<String, DocumentationSchema> subProperties = Maps.newHashMap();
                DocumentationSchema propertySchema = null;
                //todo: refactor this code and also handle the condition when return type is a list
                for(Map.Entry<String, ModelProperty> property : modelReader.getNameVsProperty().entrySet()) {

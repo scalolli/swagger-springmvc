@@ -47,8 +47,8 @@ public class MvcApiReaderTest {
         assertNotNull(petsDocumentation.getModels());
 //        assertEquals(1, petsDocumentation.getModels().size());
 //        assertEquals(6, petsDocumentation.getModels().get("Pet").getProperties().size());
-        ObjectMapper mapper = new ObjectMapper();
-        System.out.println("Json is: " + mapper.defaultPrettyPrintingWriter().writeValueAsString(petsDocumentation));
+//        ObjectMapper mapper = new ObjectMapper();
+//        System.out.println("Json is: " + mapper.defaultPrettyPrintingWriter().writeValueAsString(petsDocumentation));
     }
 	
 	@Test

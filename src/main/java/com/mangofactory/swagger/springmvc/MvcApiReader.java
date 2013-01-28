@@ -46,7 +46,7 @@ public class MvcApiReader {
 	
 	private final Map<Class<?>,DocumentationEndPoint> resourceListCache = Maps.newHashMap();
 	private final Map<Class<?>,ControllerDocumentation> apiCache = Maps.newHashMap();
-    private final HashMap<String, DocumentationSchema> propertyNameVsDocumentation = new HashMap<>();
+    private final HashMap<String, DocumentationSchema> propertyNameVsDocumentation = Maps.newHashMap();
 	
 	public MvcApiReader(WebApplicationContext context, SwaggerConfiguration swaggerConfiguration)
 	{
