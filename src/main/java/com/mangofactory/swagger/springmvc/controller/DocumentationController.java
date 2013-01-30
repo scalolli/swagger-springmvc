@@ -22,7 +22,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Controller
-@RequestMapping("/apidoc")
+@RequestMapping("/api-docs")
 /**
  * Entry-point controller, which responds to requests for documentation, and
  * returns the Swagger compliant docummentation for declared @Controller s
@@ -32,7 +32,7 @@ import java.util.Map;
  */
 public class DocumentationController implements InitializingBean {
 
-	private static final String CONTROLLER_ENDPOINT = "apidoc";
+	private static final String CONTROLLER_ENDPOINT = "api-docs";
 	
 	@Getter @Setter
 	private String apiVersion = "1.0";
