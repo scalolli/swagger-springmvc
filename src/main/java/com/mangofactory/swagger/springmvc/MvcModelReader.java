@@ -103,8 +103,11 @@ public class MvcModelReader {
         ModelProperty modelProperty = new ModelProperty(field.getName(),
                 alternateTypeName == null ? field.getType().getSimpleName() : alternateTypeName, field.getType());
         PropertyDescriptor descriptor = BeanUtils.getPropertyDescriptor(modelClass, field.getName());
+        //first try to find if the @ApiProperty annotation has been applied on the field
         ApiProperty apiProperty = AnnotationUtils.findAnnotation(field.getType().getClass(), ApiProperty.class);
-        if(apiProperty == null) {
+        //if the annotation @ApiProperty has not been applied on the field, then check if it has been applied on the
+        //read method.
+        if(apiProperty == null && descriptor != null) {
             apiProperty = AnnotationUtils.findAnnotation(descriptor.getReadMethod(), ApiProperty.class);
         }
         if(apiProperty != null) {

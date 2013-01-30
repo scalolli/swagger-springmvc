@@ -30,9 +30,6 @@ import static com.google.common.collect.Lists.newArrayList;
  *
  */
 public class MvcModelResource {
-    // NOTE : Currently, this class handles the parsing, as well as the POJO aspects.
-	// should probably split this out later.
-
     @Getter
     private HashMap<String, DocumentationSchema> propertyNameVsDocumentation = Maps.newHashMap();
 
