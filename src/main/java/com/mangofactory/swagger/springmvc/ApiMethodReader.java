@@ -1,8 +1,10 @@
 package com.mangofactory.swagger.springmvc;
 
+import java.lang.reflect.ParameterizedType;
 import java.util.Arrays;
 import java.util.List;
 
+import com.mangofactory.swagger.springmvc.util.Utils;
 import lombok.Getter;
 import lombok.val;
 import lombok.extern.slf4j.Slf4j;
@@ -68,8 +70,14 @@ public class ApiMethodReader {
 		DocumentationOperation operation = new DocumentationOperation(requestMethod.name(),summary,notes);
 		operation.setDeprecated(deprecated);
 		operation.setNickname(nickname);
-        operation.setResponseClass(responseClass.getSimpleName());
-		for (DocumentationParameter parameter : parameters)
+        //todo: we are currently only supporting List as return type hence we just get the first type param
+        if (Utils.isListType(responseClass) && handlerMethod.getMethod().getGenericReturnType() != null) {
+            Class referenceType = (Class) ((ParameterizedType) handlerMethod.getMethod().getGenericReturnType()).getActualTypeArguments()[0];
+            operation.setResponseClass(MvcModelReader.LIST + "[" + referenceType.getSimpleName() + "]");
+        } else {
+            operation.setResponseClass(responseClass.getSimpleName());
+        }
+        for (DocumentationParameter parameter : parameters)
 			operation.addParameter(parameter);
 		setTags(operation);
 		

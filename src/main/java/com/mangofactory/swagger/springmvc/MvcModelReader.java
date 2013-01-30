@@ -2,13 +2,13 @@ package com.mangofactory.swagger.springmvc;
 
 import com.google.common.base.Predicate;
 import com.google.common.collect.Maps;
+import com.mangofactory.swagger.springmvc.util.Utils;
 import com.wordnik.swagger.core.ApiProperty;
 import lombok.Getter;
 import org.springframework.beans.BeanUtils;
 import org.springframework.core.annotation.AnnotationUtils;
 
 import java.beans.PropertyDescriptor;
-import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.util.Arrays;
@@ -31,6 +31,7 @@ public class MvcModelReader {
     @Getter
     private Map<String, ModelProperty> nameVsProperty = Maps.newHashMap();
     public static final String ARRAY = "Array";
+    public static final String LIST = "List";
 
     public MvcModelReader(Class<?> modelClass)
     {
@@ -39,10 +40,15 @@ public class MvcModelReader {
     }
 
     private void populateModelProperties() {
-        populateProperties(modelClass);
+        if (Utils.isListType(modelClass)) {
+            //populate properties for list type since we want to support only list types for now
+//            populatePropertiesForList(modelClass.getTypeParameters()[0]);
+        } else {
+            populatePropertiesForNonCollectionType(modelClass);
+        }
     }
 
-    private void populateProperties(Class classToExtractPropertiesFrom) {
+    private void populatePropertiesForNonCollectionType(Class classToExtractPropertiesFrom) {
         Field[] fields = classToExtractPropertiesFrom.getDeclaredFields();
         List<Field> fieldList = Arrays.asList(fields);
         List<Field> simpleFields = newArrayList(filter(fieldList, new Predicate<Field>() {
@@ -54,13 +60,13 @@ public class MvcModelReader {
         List<Field> complexFields = newArrayList(filter(fieldList, new Predicate<Field>() {
             @Override
             public boolean apply(Field field) {
-                return !BeanUtils.isSimpleProperty(field.getType()) && !isListOfValues(field);
+                return !BeanUtils.isSimpleProperty(field.getType()) && !Utils.isParametrizeListOfValues(field);
             }
         }));
         List<Field> listFields = newArrayList(filter(fieldList, new Predicate<Field>() {
             @Override
             public boolean apply(Field field) {
-                return isListOfValues(field);
+                return Utils.isParametrizeListOfValues(field);
             }
         }));
 
@@ -71,16 +77,12 @@ public class MvcModelReader {
         for(Field field : complexFields) {
             nameVsProperty.put(field.getName(), getModelProperty(field, null));
             // todo: Not sure if I need to populate the sub type's properties here itself
-//            populateProperties(field.getType());
+//            populatePropertiesForNonCollectionType(field.getType());
         }
 
         for(Field listField : listFields) {
             populatePropertiesForList(listField);
         }
-    }
-
-    private boolean isListOfValues(Field field) {
-        return (field.getType() == List.class || field.getType() == Array.class) && field.getGenericType() instanceof ParameterizedType;
     }
 
     private void populatePropertiesForList(Field field) {
@@ -91,7 +93,7 @@ public class MvcModelReader {
             collectionMemberDescription.setType(actualTypeParameter.getSimpleName());
         } else {
             //todo: since it is a complex type we need to populate properties for its fields as well?
-//            populateProperties(actualTypeParameter);
+//            populatePropertiesForNonCollectionType(actualTypeParameter);
             collectionMemberDescription.setReferenceType(actualTypeParameter.getSimpleName());
         }
         collectionMemberDescription.setReferencedClassType(actualTypeParameter);
