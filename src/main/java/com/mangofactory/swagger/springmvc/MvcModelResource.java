@@ -35,7 +35,7 @@ public class MvcModelResource {
 
         //now handle the collection types such that, we take into consideration their reference type, by loading all
         //the generic parameter types for this method
-        for (Type type : handlerMethod.getMethod().getTypeParameters()) {
+        for (Type type : handlerMethod.getMethod().getGenericParameterTypes()) {
             types.add((Class)((ParameterizedTypeImpl) type).getActualTypeArguments()[0]);
         }
         if ((Utils.isListType(handlerMethod.getMethod().getReturnType()) && handlerMethod.getMethod().getGenericReturnType() != null)) {
