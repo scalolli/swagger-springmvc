@@ -2,7 +2,7 @@ package com.mangofactory.swagger.springmvc;
 
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import com.mangofactory.swagger.springmvc.util.Utils;
+import com.mangofactory.swagger.springmvc.util.Util;
 import com.wordnik.swagger.core.DocumentationSchema;
 import lombok.Getter;
 import org.springframework.beans.BeanUtils;
@@ -11,7 +11,12 @@ import sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 
 /**
@@ -40,7 +45,7 @@ public class MvcModelResource {
                 types.add((Class)((ParameterizedTypeImpl) type).getActualTypeArguments()[0]);
             }
         }
-        if ((Utils.isListType(handlerMethod.getMethod().getReturnType()) && handlerMethod.getMethod().getGenericReturnType() != null)) {
+        if ((Util.isListType(handlerMethod.getMethod().getReturnType()) && handlerMethod.getMethod().getGenericReturnType() != null)) {
             //todo: currently we are only supporting a list return type hence this..
             Class referenceType = (Class) ((ParameterizedType) handlerMethod.getMethod().getGenericReturnType()).getActualTypeArguments()[0];
             Collections.addAll(types, referenceType);
@@ -61,7 +66,7 @@ public class MvcModelResource {
                 //todo: refactor this code and also handle the condition when return type is a list
                 for (Map.Entry<String, ModelProperty> property : modelReader.getNameVsProperty().entrySet()) {
                     if (!BeanUtils.isSimpleProperty(property.getValue().getClassType())) {
-                        if (property.getValue().getClassType() == List.class) {
+                        if (Util.isListType(property.getValue().getClassType())) {
                             populateModels(Sets.newHashSet((Class) property.getValue().getMemberDescription().getReferencedClassType()));
                             propertySchema = createDocumentationSchemaForList(property);
                         } else {

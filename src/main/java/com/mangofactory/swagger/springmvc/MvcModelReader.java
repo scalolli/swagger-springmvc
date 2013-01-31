@@ -2,7 +2,7 @@ package com.mangofactory.swagger.springmvc;
 
 import com.google.common.base.Predicate;
 import com.google.common.collect.Maps;
-import com.mangofactory.swagger.springmvc.util.Utils;
+import com.mangofactory.swagger.springmvc.util.Util;
 import com.wordnik.swagger.core.ApiProperty;
 import lombok.Getter;
 import org.springframework.beans.BeanUtils;
@@ -40,7 +40,7 @@ public class MvcModelReader {
     }
 
     private void populateModelProperties() {
-        if (Utils.isListType(modelClass)) {
+        if (Util.isListType(modelClass)) {
             //populate properties for list type since we want to support only list types for now
 //            populatePropertiesForList(modelClass.getTypeParameters()[0]);
         } else {
@@ -60,13 +60,13 @@ public class MvcModelReader {
         List<Field> complexFields = newArrayList(filter(fieldList, new Predicate<Field>() {
             @Override
             public boolean apply(Field field) {
-                return !BeanUtils.isSimpleProperty(field.getType()) && !Utils.isParametrizeListOfValues(field);
+                return !BeanUtils.isSimpleProperty(field.getType()) && !Util.isListType(field.getClass());
             }
         }));
         List<Field> listFields = newArrayList(filter(fieldList, new Predicate<Field>() {
             @Override
             public boolean apply(Field field) {
-                return Utils.isParametrizeListOfValues(field);
+                return Util.isListType(field.getType());
             }
         }));
 

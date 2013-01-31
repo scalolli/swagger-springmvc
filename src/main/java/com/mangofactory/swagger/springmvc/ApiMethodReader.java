@@ -1,22 +1,7 @@
 package com.mangofactory.swagger.springmvc;
 
-import java.lang.reflect.ParameterizedType;
-import java.util.Arrays;
-import java.util.List;
-
-import com.mangofactory.swagger.springmvc.util.Utils;
-import lombok.Getter;
-import lombok.val;
-import lombok.extern.slf4j.Slf4j;
-
-import org.apache.commons.lang.StringUtils;
-import org.springframework.core.MethodParameter;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.method.HandlerMethod;
-
 import com.google.common.collect.Lists;
+import com.mangofactory.swagger.springmvc.util.Util;
 import com.wordnik.swagger.core.ApiError;
 import com.wordnik.swagger.core.ApiErrors;
 import com.wordnik.swagger.core.ApiOperation;
@@ -26,6 +11,19 @@ import com.wordnik.swagger.core.DocumentationAllowableValues;
 import com.wordnik.swagger.core.DocumentationError;
 import com.wordnik.swagger.core.DocumentationOperation;
 import com.wordnik.swagger.core.DocumentationParameter;
+import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
+import lombok.val;
+import org.apache.commons.lang.StringUtils;
+import org.springframework.core.MethodParameter;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.method.HandlerMethod;
+
+import java.lang.reflect.ParameterizedType;
+import java.util.Arrays;
+import java.util.List;
 
 @Slf4j
 public class ApiMethodReader {
@@ -71,7 +69,7 @@ public class ApiMethodReader {
 		operation.setDeprecated(deprecated);
 		operation.setNickname(nickname);
         //todo: we are currently only supporting List as return type hence we just get the first type param
-        if (Utils.isListType(responseClass) && handlerMethod.getMethod().getGenericReturnType() != null) {
+        if (Util.isListType(responseClass) && handlerMethod.getMethod().getGenericReturnType() != null) {
             Class referenceType = (Class) ((ParameterizedType) handlerMethod.getMethod().getGenericReturnType()).getActualTypeArguments()[0];
             operation.setResponseClass(MvcModelReader.LIST + "[" + referenceType.getSimpleName() + "]");
         } else {
